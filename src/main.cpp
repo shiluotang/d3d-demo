@@ -2,6 +2,7 @@
 // - copy the two files from the lib directory of your compiler
 // - open project options >> parameters and add both using "Add Library or Object"
 
+#include <cstring>
 #include <fstream>
 
 #include <windows.h>
@@ -52,15 +53,38 @@ class demo_renderer
                     D3DPOOL_MANAGED,
                     &vertexbuffer,
                     NULL);
-            LOGD("CreateVertexBuffer() = " << rc);
+            LOGD("IDirect3DDevice9::CreateVertexBuffer("
+                    << "this = " << d3ddev
+                    << ", Length = " << 3 * sizeof(CUSTOMVERTEX)
+                    << ", Usage = " << 0
+                    << ", FVF = " << CUSTOMFVF
+                    << ", Pool = " << D3DPOOL_MANAGED
+                    << ", ppVertexBuffer = " << &vertexbuffer
+                    << "(" << vertexbuffer << ")"
+                    << ", pSharedHandle = " << static_cast<void*>(NULL)
+                    << ") = " << rc);
 
             VOID* pVoid;
-
             // lock v_buffer and load the vertices into it
-            vertexbuffer->Lock(0, 0, (void**)&pVoid, 0);
-            memcpy(pVoid, vertices, sizeof(vertices));
-            vertexbuffer->Unlock();
+            rc = vertexbuffer->Lock(
+                    0,
+                    0,
+                    reinterpret_cast<void**>(&pVoid),
+                    0);
+            LOGD("IDirect3DVertexBuffer9::Lock("
+                    << "this = " << vertexbuffer
+                    << ", OffsetToLock = " << 0
+                    << ", SizeToLock = " << 0
+                    << ", ppbData = " << &pVoid
+                    << "(" << pVoid << ")"
+                    << ", Flags = " << 0
+                    << ") = " << rc);
+            std::memcpy(pVoid, vertices, sizeof(vertices));
+            rc = vertexbuffer->Unlock();
             ctx.set_d3d_vertex_buffer(vertexbuffer);
+            LOGD("IDirect3DVertexBuffer9::Unlock("
+                    << "this = " << vertexbuffer
+                    << ") = " << rc);
         }
 
         virtual

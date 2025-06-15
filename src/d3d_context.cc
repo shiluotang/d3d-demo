@@ -32,10 +32,11 @@ d3d_context::~d3d_context() {
 }
 
 void d3d_context::init(window const &wnd) {
+    HRESULT rc = 0;
     LPDIRECT3D9 d3d = NULL;
     LPDIRECT3DDEVICE9 d3ddev = NULL;
     d3d = Direct3DCreate9(D3D_SDK_VERSION);
-    LOGD("Direct3DCreate9(SDKVersion = " << D3D_SDK_VERSION << ")");
+    LOGD("Direct3DCreate9(SDKVersion = " << D3D_SDK_VERSION << ") = " << d3d);
 
     D3DPRESENT_PARAMETERS d3dpp;
     ZeroMemory(&d3dpp, sizeof(d3dpp));
@@ -52,13 +53,23 @@ void d3d_context::init(window const &wnd) {
     d3dpp.AutoDepthStencilFormat    = D3DFMT_D16;
 
     // create a device class using this information and the info from the d3dpp stuct
-    d3d->CreateDevice(
+    rc = d3d->CreateDevice(
             D3DADAPTER_DEFAULT,
             D3DDEVTYPE_HAL,
             wnd.get_handle(),
             D3DCREATE_SOFTWARE_VERTEXPROCESSING,
             &d3dpp,
             &d3ddev);
+    LOGD("IDirect3DDevice9::CreateDevice("
+            << "this = " << d3d
+            << ", Adapter = " << D3DADAPTER_DEFAULT
+            << ", DeviceType = " << D3DDEVTYPE_HAL
+            << ", hFocusWindow = " << wnd.get_handle()
+            << ", BehaviorFlags = " << D3DCREATE_SOFTWARE_VERTEXPROCESSING
+            << ", pPresentationParameters = " << &d3dpp
+            << ", ppReturnedDeviceInterface = " << &d3ddev
+            << "(" << d3ddev << ")"
+            << ") = " << rc);
     _M_d3d = d3d;
     _M_d3d_dev = d3ddev;
     std::memcpy(&_M_d3d_present_parameters, &d3dpp, sizeof(d3dpp));
@@ -67,11 +78,26 @@ void d3d_context::init(window const &wnd) {
     // init_graphics();
 
     // turn off the 3D lighting
-    d3ddev->SetRenderState(D3DRS_LIGHTING, false);
+    rc = d3ddev->SetRenderState(D3DRS_LIGHTING, false);
+    LOGD("IDirect3DDevice9::SetRenderState("
+            << "this = " << d3ddev
+            << ", State = " << D3DRS_LIGHTING
+            << ", Value = " << false
+            << ") = " << rc);
     // both sides of the triangles
-    d3ddev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    rc = d3ddev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    LOGD("IDirect3DDevice9::SetRenderState("
+            << "this = " << d3ddev
+            << ", State = " << D3DRS_CULLMODE
+            << ", Value = " << D3DCULL_NONE
+            << ") = " << rc);
     // turn on the z-buffer
-    d3ddev->SetRenderState(D3DRS_ZENABLE,  true);
+    rc = d3ddev->SetRenderState(D3DRS_ZENABLE,  true);
+    LOGD("IDirect3DDevice9::SetRenderState("
+            << "this = " << d3ddev
+            << ", State = " << D3DRS_ZENABLE
+            << ", Value = " << true
+            << ") = " << rc);
 }
 
 LPDIRECT3D9
