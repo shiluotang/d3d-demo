@@ -51,15 +51,21 @@ int application::run() {
     _M_window.show();
     MSG msg;
     while (msg.message != WM_QUIT) {
+        // There's a WM_TIMER after WM_QUIT, so this internal loop will quit
+        // with msg.message == WM_TIMER which means never exit the outer loop.
         while (PeekMessage(
                     &msg,
                     NULL,
                     0,
                     0,
                     PM_REMOVE)) {
+            if (msg.message == WM_QUIT)
+                break;
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+        if (msg.message == WM_QUIT)
+            continue;
         if (_M_renderer)
             _M_renderer->update(_M_window, _M_d3d_ctx);
     }
