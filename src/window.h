@@ -37,7 +37,7 @@ class window {
         static
         window* find_current_window(HWND hwnd);
 
-        LRESULT handle_message(UINT message, WPARAM wParam, LPARAM lParam);
+        LRESULT handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam);
     private:
         HINSTANCE _M_hinstance;
         window_properties _M_props;

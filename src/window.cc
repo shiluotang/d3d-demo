@@ -15,30 +15,27 @@ namespace org {
 
 LRESULT CALLBACK window::WindowProc(
         HWND hWnd,
-        UINT message,
+        UINT uMsg,
         WPARAM wParam,
         LPARAM lParam)  {
     LRESULT rc = 0;
     window *wnd = find_current_window(hWnd);
-    if (wnd) {
-        rc = wnd->handle_message(message, wParam, lParam);
-        return rc;
-    } else {
-        switch(message) {
-            case WM_DESTROY: {
-                PostQuitMessage(0);
-                LOGD("PostQuitMessage(nExitCode = 0)");
-                break;
-            }
-            default:
-                rc = DefWindowProc(hWnd, message, wParam, lParam);
-                LOGD("DefWindowProc(hWnd = " << hWnd
-                        << ", Msg = " << nameOfMsg(message)
-                        << ", wParam = " << wParam
-                        << ", lParam = " << lParam
-                        << ") = " << rc);
-                break;
+    if (wnd)
+        return wnd->handle_message(uMsg, wParam, lParam);
+    switch(uMsg) {
+        case WM_DESTROY: {
+            PostQuitMessage(0);
+            LOGD("PostQuitMessage(nExitCode = 0)");
+            break;
         }
+        default:
+            rc = DefWindowProc(hWnd, uMsg, wParam, lParam);
+            LOGD("DefWindowProc(hWnd = " << hWnd
+                    << ", Msg = " << nameOfMsg(uMsg)
+                    << ", wParam = " << wParam
+                    << ", lParam = " << lParam
+                    << ") = " << rc);
+            break;
     }
     // FIXME what's the default proper value for LRESULT
     return rc;
@@ -79,7 +76,7 @@ void window::create() {
     wc.lpfnWndProc   = &window::WindowProc;
     wc.hInstance     = _M_hinstance;
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW);
+    wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
     wc.lpszClassName = lpClassName;
     wc.hIcon         = NULL;
     wc.hIconSm       = NULL;
@@ -166,10 +163,11 @@ window* window::find_current_window(HWND hwnd) {
     return reinterpret_cast<window*>(rc);
 }
 
-LRESULT window::handle_message(UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT
+window::handle_message(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     LRESULT rc = 0;
     bool handled = true;
-    switch (message) {
+    switch (uMsg) {
         case WM_CREATE:
             break;
         case WM_MOVE:
@@ -185,9 +183,9 @@ LRESULT window::handle_message(UINT message, WPARAM wParam, LPARAM lParam) {
             break;
     }
     if (!handled) {
-        rc = DefWindowProc(_M_hwnd, message, wParam, lParam);
+        rc = DefWindowProc(_M_hwnd, uMsg, wParam, lParam);
         LOGD("DefWindowProc(hWnd = " << _M_hwnd
-                << ", Msg = " << nameOfMsg(message)
+                << ", Msg = " << nameOfMsg(uMsg)
                 << ", wParam = " << wParam
                 << ", lParam = " << lParam
                 << ") = " << rc);
