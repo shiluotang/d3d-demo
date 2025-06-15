@@ -1,0 +1,69 @@
+#include <windows.h>
+
+#include "window.h"
+#include "renderer.h"
+#include "application.h"
+
+namespace org {
+
+application::application(HINSTANCE hInstance)
+    : _M_window(hInstance)
+    , _M_d3d_ctx()
+    , _M_renderer(NULL)
+{
+}
+
+renderer* application::get_renderer() const {
+    return _M_renderer;
+}
+
+void application::set_renderer(renderer *value) {
+    _M_renderer = value;
+}
+
+window const& application::get_window() const {
+    return _M_window;
+}
+
+window& application::get_window() {
+    return _M_window;
+}
+
+d3d_context const& application::get_d3d_context() const {
+    return _M_d3d_ctx;
+}
+
+d3d_context& application::get_d3d_context() {
+    return _M_d3d_ctx;
+}
+
+void application::init() {
+    _M_window.init();
+    _M_d3d_ctx.init(_M_window);
+    if (_M_renderer)
+        _M_renderer->init(_M_window, _M_d3d_ctx);
+}
+
+application::~application() {
+}
+
+int application::run() {
+    _M_window.show();
+    MSG msg;
+    while (msg.message != WM_QUIT) {
+        while (PeekMessage(
+                    &msg,
+                    NULL,
+                    0,
+                    0,
+                    PM_REMOVE)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        if (_M_renderer)
+            _M_renderer->update(_M_window, _M_d3d_ctx);
+    }
+    return msg.wParam;
+}
+
+} // namespace org

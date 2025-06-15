@@ -1,0 +1,8 @@
+file(GLOB SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cc *.cpp)
+
+set(MyExe ${CMAKE_PROJECT_NAME})
+add_executable(${MyExe})
+target_sources(${MyExe} PRIVATE ${SOURCE_FILES})
+target_link_libraries(${MyExe} PRIVATE d3d9)
+target_link_libraries(${MyExe} PRIVATE d3dx9_43)
+target_link_options(${MyExe} PRIVATE -mwindows)

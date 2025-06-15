@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.10)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_C_COMPILER "C:/Dev-Cpp/MinGW64/bin/gcc.exe")
+set(CMAKE_CXX_COMPILER "C:/Dev-Cpp/MinGW64/bin/g++.exe")
+
+add_library(d3d9 IMPORTED STATIC)
+add_library(d3dx9_43 IMPORTED STATIC)
+set_target_properties(d3d9 PROPERTIES IMPORTED_LOCATION "C:/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libd3d9.a")
+set_target_properties(d3dx9_43 PROPERTIES IMPORTED_LOCATION "C:/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libd3dx9_43.a")
+
+project(d3d-demo VERSION 1.0)
+add_subdirectory(src)
