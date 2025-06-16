@@ -15,6 +15,7 @@
 #include "renderer.h"
 #include "d3d_context.h"
 #include "application.h"
+#include "glu_tess.h"
 
 namespace {
 
@@ -185,5 +186,6 @@ int WINAPI WinMain(
     app.get_window().set_properties(props);
     app.init();
     int rc = app.run();
+    org::foo();
     return rc;
 }
