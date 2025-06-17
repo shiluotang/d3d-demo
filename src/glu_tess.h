@@ -109,13 +109,15 @@ class glu_tess {
 
         void end();
 
+        // contour automatically connect the last vertex to the first one
         void begin_contour();
 
+        // contour automatically connect the last vertex to the first one
         void end_contour();
 
         void vertex(GLdouble *coords, void *data = NULL);
 
-        std::vector<tess_triangle> const& get_triangles() const;
+        triangles_type const& get_triangles() const;
     protected:
         void setup();
         void teardown();

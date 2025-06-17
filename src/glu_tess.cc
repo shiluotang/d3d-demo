@@ -241,30 +241,41 @@ void glu_tess::on_tess_vertex(void *vertex) {
 }
 
 void glu_tess::on_tess_error(GLenum ecode) {
-    LOGE(gluErrorString(ecode));
+    LOGE("glu_tess: " << gluErrorString(ecode));
 }
 
 void glu_tess::begin() {
     gluTessBeginPolygon(_M_tess, this);
+    LOGD("gluTessBeginPolygon(tess = " << _M_tess
+            << ", polygon_data = " << this
+            << ")");
 }
 
 void glu_tess::end() {
     gluTessEndPolygon(_M_tess);
+    LOGD("gluTessEndPolygon(tess = " << _M_tess << ")");
 }
 
 void glu_tess::begin_contour() {
     gluTessBeginContour(_M_tess);
+    LOGD("gluTessBeginContour(tess = " << _M_tess << ")");
 }
 
 void glu_tess::end_contour() {
     gluTessEndContour(_M_tess);
+    LOGD("gluTessEndContour(tess = " << _M_tess << ")");
 }
 
 void glu_tess::vertex(GLdouble *coords, void *data) {
     gluTessVertex(_M_tess, coords, data);
+    LOGD("gluTessVertex(tess = " << _M_tess
+            << ", coords = " << coords
+            << "(" << coords[0] << ", " << coords[1] << ", " << coords[2] << ")"
+            << ", data = " << data
+            << ")");
 }
 
-std::vector<glu_tess::tess_triangle> const&
+glu_tess::triangles_type const&
 glu_tess::get_triangles() const {
     return _M_triangles;
 }
@@ -293,11 +304,13 @@ std::ostream& operator<<(
 
 void foo() {
     GLdouble quad2[8][3] = {
+        // CW (clock-wise)
         {-2,3,0},
         {-2,0,0},
         {2,0,0},
         {2,3,0},
 
+        // CCW (counter clock-wise)
         {-1,2,0},
         {-1,1,0},
         {1,1,0},
