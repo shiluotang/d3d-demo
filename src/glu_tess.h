@@ -99,8 +99,12 @@ class glu_tess {
         static
         void CALLBACK tess_error_callback(GLenum ecode, void *data);
 
+        void set_callback0(GLenum which, tess_callback);
+
         template <typename T>
-        void setup_callback(GLenum which, T cb);
+        void set_callback(GLenum which, T cb) {
+            set_callback0(which, reinterpret_cast<void(*)()>(cb));
+        }
 
         void setup_callbacks();
 

@@ -200,8 +200,8 @@ void CALLBACK glu_tess::tess_error_callback(GLenum ecode, void *data) {
     t->on_tess_error(ecode);
 }
 
-template <typename T>
-void glu_tess::setup_callback(GLenum which, T cb) {
+void glu_tess::set_callback0(GLenum which, tess_callback cb) {
+    gluTessCallback(_M_tess, which, cb);
     gluTessCallback(_M_tess, which, reinterpret_cast<tess_callback>(cb));
     LOGD("gluTessCallback(tess = " << _M_tess
             << ", which = " << nameOfTess(which)
@@ -213,20 +213,20 @@ void glu_tess::setup_callbacks() {
     if (!_M_tess)
         return;
     LOGD(__PRETTY_FUNCTION__);
-    setup_callback(GLU_TESS_BEGIN_DATA, &tess_begin_callback);
-    setup_callback(GLU_TESS_VERTEX_DATA, &tess_vertex_callback);
-    setup_callback(GLU_TESS_END_DATA, &tess_end_callback);
-    setup_callback(GLU_TESS_ERROR_DATA, &tess_error_callback);
+    set_callback(GLU_TESS_BEGIN_DATA, &tess_begin_callback);
+    set_callback(GLU_TESS_VERTEX_DATA, &tess_vertex_callback);
+    set_callback(GLU_TESS_END_DATA, &tess_end_callback);
+    set_callback(GLU_TESS_ERROR_DATA, &tess_error_callback);
 }
 
 void glu_tess::teardown_callbacks() {
     if (!_M_tess)
         return;
     LOGD(__PRETTY_FUNCTION__);
-    setup_callback(GLU_TESS_BEGIN_DATA, NULL);
-    setup_callback(GLU_TESS_VERTEX_DATA, NULL);
-    setup_callback(GLU_TESS_END_DATA, NULL);
-    setup_callback(GLU_TESS_ERROR_DATA, NULL);
+    set_callback(GLU_TESS_BEGIN_DATA, NULL);
+    set_callback(GLU_TESS_VERTEX_DATA, NULL);
+    set_callback(GLU_TESS_END_DATA, NULL);
+    set_callback(GLU_TESS_ERROR_DATA, NULL);
 }
 
 void glu_tess::on_tess_begin(GLenum type) {
@@ -287,6 +287,7 @@ void glu_tess::end_contour() {
 }
 
 void glu_tess::vertex(GLdouble *coords, void *data) {
+    // where is the purpose of data (polygon_data) parameter
     gluTessVertex(_M_tess, coords, data);
     LOGD("gluTessVertex(tess = " << _M_tess
             << ", coords = " << coords
