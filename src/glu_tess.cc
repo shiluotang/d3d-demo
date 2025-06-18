@@ -109,13 +109,18 @@ glu_tess::triangle_fan_collector::triangle_fan_collector(glu_tess *tess)
 void glu_tess::triangle_fan_collector::collect(tess_point const &p) {
     if (_M_triangle_points.size() < 3)
         _M_triangle_points.push_back(p);
-    tess_triangle t(
-            _M_triangle_points[0],
-            _M_triangle_points[1],
-            _M_triangle_points[2]);
-    _M_tess->_M_triangles.push_back(t);
-    _M_triangle_points.pop_back();
-    _M_triangle_points.pop_back();
+    if (_M_triangle_points.size() == 3) {
+        tess_triangle t(
+                _M_triangle_points[0],
+                _M_triangle_points[1],
+                _M_triangle_points[2]);
+        LOGD(__PRETTY_FUNCTION__ << " triangle = " << t);
+        _M_tess->_M_triangles.push_back(t);
+        tess_point tp = _M_triangle_points.back();
+        _M_triangle_points.pop_back();
+        _M_triangle_points.pop_back();
+        _M_triangle_points.push_back(tp);
+    }
 }
 
 glu_tess::triangle_strip_collector::triangle_strip_collector(

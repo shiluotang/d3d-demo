@@ -163,7 +163,7 @@ class demo_renderer
         float index;
 };
 
-class hole_polygon_renderer
+class polygon_test_renderer
     : public org::renderer
 {
     public:
@@ -176,9 +176,10 @@ class hole_polygon_renderer
 
         static const int CUSTOMFVF = D3DFVF_XYZ | D3DFVF_DIFFUSE;
 
-        hole_polygon_renderer() {
+        polygon_test_renderer() {
         }
 
+        virtual
         void create_triangles() {
             GLdouble quad[][3] = {
                 // CW (clockwise)
@@ -354,9 +355,116 @@ class hole_polygon_renderer
             d3ddev->Present(NULL, NULL, NULL, NULL);
         }
     protected:
+        std::vector<CUSTOMVERTEX> _M_vertices;
     private:
         float index;
-        std::vector<CUSTOMVERTEX> _M_vertices;
+};
+
+class concave_polygon_renderer
+    : public polygon_test_renderer
+{
+    public:
+        virtual
+        void create_triangles() {
+            GLdouble quad[][3] = {
+                {-1,3,0},
+                {0,0,0},
+                {1,3,0},
+                {0,2,0}
+            };
+
+            org::glu_tess tess;
+            tess.begin();
+            tess.begin_contour();
+            tess.vertex(quad[0], quad[0]);
+            tess.vertex(quad[1], quad[1]);
+            tess.vertex(quad[2], quad[2]);
+            tess.vertex(quad[3], quad[3]);
+            // contour automatically connect the last vertex to the first one
+            tess.end_contour();
+            tess.end();
+            typedef org::glu_tess::triangles_type triangles_type;
+            typedef triangles_type::const_iterator const_iterator;
+
+            triangles_type const &t = tess.get_triangles();
+            int idx = 0;
+            D3DCOLOR colors[] = {
+                D3DCOLOR_XRGB(0, 0, 255),
+                D3DCOLOR_XRGB(0, 255, 0),
+                D3DCOLOR_XRGB(255, 0, 0),
+            };
+
+            for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
+                CUSTOMVERTEX v[3];
+                for (int i = 0, n = 3; i < n; ++i) {
+                    v[i].X = (*it)[i][0];
+                    v[i].Y = (*it)[i][1];
+                    v[i].Z = (*it)[i][2];
+                    v[i].COLOR = colors[(idx++ % 3)];
+                    _M_vertices.push_back(v[i]);
+                }
+            }
+        }
+};
+
+class hole_polygon_renderer
+    : public polygon_test_renderer
+{
+    public:
+        virtual
+        void create_triangles() {
+            GLdouble quad[][3] = {
+                // CW (clockwise)
+                { -2, 0, 1 },
+                { -2, 3, 1 },
+                { 2, 3, 1 },
+                { 2, 0, 1 },
+
+                // CCW (counter clockwise)
+                { -1, 1, 2 },
+                { -1, 2, 2 },
+                {  1, 2, 2 },
+                { 1, 1, 2 },
+            };
+
+            org::glu_tess tess;
+            tess.begin();
+            tess.begin_contour();
+            tess.vertex(quad[0], quad[0]);
+            tess.vertex(quad[1], quad[1]);
+            tess.vertex(quad[2], quad[2]);
+            tess.vertex(quad[3], quad[3]);
+            // contour automatically connect the last vertex to the first one
+            tess.end_contour();
+            tess.begin_contour();
+            tess.vertex(quad[4], quad[4]);
+            tess.vertex(quad[5], quad[5]);
+            tess.vertex(quad[6], quad[6]);
+            tess.vertex(quad[7], quad[7]);
+            tess.end_contour();
+            tess.end();
+            typedef org::glu_tess::triangles_type triangles_type;
+            typedef triangles_type::const_iterator const_iterator;
+
+            triangles_type const &t = tess.get_triangles();
+            int idx = 0;
+            D3DCOLOR colors[] = {
+                D3DCOLOR_XRGB(0, 0, 255),
+                D3DCOLOR_XRGB(0, 255, 0),
+                D3DCOLOR_XRGB(255, 0, 0),
+            };
+
+            for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
+                CUSTOMVERTEX v[3];
+                for (int i = 0, n = 3; i < n; ++i) {
+                    v[i].X = (*it)[i][0];
+                    v[i].Y = (*it)[i][1];
+                    v[i].Z = (*it)[i][2];
+                    v[i].COLOR = colors[(idx++ % 3)];
+                    _M_vertices.push_back(v[i]);
+                }
+            }
+        }
 };
 
 } // namespace anonymous
@@ -376,7 +484,8 @@ int WINAPI WinMain(
     window_properties props;
     props.set_title("MyTest");
     // demo_renderer renderer;
-    hole_polygon_renderer renderer;
+    // hole_polygon_renderer renderer;
+    concave_polygon_renderer renderer;
 
     application app(hInstance);
     app.set_renderer(&renderer);
