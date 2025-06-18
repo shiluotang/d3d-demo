@@ -4,8 +4,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(d3d-demo VERSION 1.0)
-
 set(COMPILER_ARCH "x86_64")
 
 if(WIN32)
@@ -17,6 +15,7 @@ else()
     set(CMAKE_CXX_COMPILER "/usr/bin/${COMPILER_ARCH}-w64-mingw32-g++")
 endif()
 
+project(d3d-demo VERSION 1.0)
 add_library(d3d9 IMPORTED STATIC)
 add_library(d3dx9_43 IMPORTED STATIC)
 add_library(glu32 IMPORTED STATIC)
