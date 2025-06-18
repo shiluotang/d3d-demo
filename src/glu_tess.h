@@ -103,7 +103,7 @@ class glu_tess {
 
         template <typename T>
         void set_callback(GLenum which, T cb) {
-            set_callback0(which, reinterpret_cast<void(*)()>(cb));
+            set_callback0(which, reinterpret_cast<tess_callback>(cb));
         }
 
         void setup_callbacks();
