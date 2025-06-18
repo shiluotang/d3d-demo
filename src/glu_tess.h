@@ -155,8 +155,6 @@ class glu_tess {
 std::ostream& operator<<(std::ostream&, glu_tess::tess_point const&);
 std::ostream& operator<<(std::ostream&, glu_tess::tess_triangle const&);
 
-void foo();
-
 } // namespace org
 
 #endif // GL_TESS_H_INCLUDED

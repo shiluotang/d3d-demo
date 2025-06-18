@@ -329,42 +329,4 @@ std::ostream& operator<<(
     return os;
 }
 
-void foo() {
-    GLdouble quad2[8][3] = {
-        // CW (clock-wise)
-        {-2,3,0},
-        {-2,0,0},
-        {2,0,0},
-        {2,3,0},
-
-        // CCW (counter clock-wise)
-        {-1,2,0},
-        {-1,1,0},
-        {1,1,0},
-        {1,2,0}
-    };
-
-    glu_tess tess;
-    tess.begin();
-    tess.begin_contour();
-    tess.vertex(quad2[0], quad2[0]);
-    tess.vertex(quad2[1], quad2[1]);
-    tess.vertex(quad2[2], quad2[2]);
-    tess.vertex(quad2[3], quad2[3]);
-    tess.end_contour();
-    tess.begin_contour();
-    tess.vertex(quad2[4], quad2[4]);
-    tess.vertex(quad2[5], quad2[5]);
-    tess.vertex(quad2[6], quad2[6]);
-    tess.vertex(quad2[7], quad2[7]);
-    tess.end_contour();
-    tess.end();
-    glu_tess::triangles_type const &triangles = tess.get_triangles();
-    typedef glu_tess::triangles_type::const_iterator const_iterator;
-    for (const_iterator it = triangles.begin(), e = triangles.end();
-            it != e; ++it) {
-        LOGD("tess triangle = " << *it);
-    }
-}
-
 } // namespace org

@@ -287,12 +287,28 @@ class polygon_test_renderer
         void update(org::window &wnd, org::d3d_context &ctx) {
             LPDIRECT3DDEVICE9 d3ddev = ctx.get_d3d_device();
             d3ddev->Clear(0, NULL, D3DCLEAR_TARGET,  D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+            LOGD("IDirect3DDevice9::Clear(Count = " << 0
+                    << ", pRects = " << static_cast<void*>(NULL)
+                    << ", Flags = " << D3DCLEAR_TARGET
+                    << ", Color = " << D3DCOLOR_XRGB(0, 0, 0)
+                    << ", Z = " << 1.0f
+                    << ", Stencil = " << 0
+                    << ")");
             d3ddev->Clear(0, NULL, D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+            LOGD("IDirect3DDevice9::Clear(Count = " << 0
+                    << ", pRects = " << static_cast<void*>(NULL)
+                    << ", Flags = " << D3DCLEAR_ZBUFFER
+                    << ", Color = " << D3DCOLOR_XRGB(0, 0, 0)
+                    << ", Z = " << 1.0f
+                    << ", Stencil = " << 0
+                    << ")");
 
             d3ddev->BeginScene();
+            LOGD("IDirect3DDevice9::BeginScene()");
 
             // select which vertex format we are using
             d3ddev->SetFVF(CUSTOMFVF);
+            LOGD("IDirect3DDevice9::SetFVF(FVF = " << CUSTOMFVF << ")");
 
             // set the view transform
             D3DXMATRIX matView;    // the view transform matrix
@@ -302,6 +318,9 @@ class polygon_test_renderer
 
             D3DXMatrixLookAtLH(&matView, &camPos, &lookAt, &up);
             d3ddev->SetTransform(D3DTS_VIEW, &matView);
+            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_VIEW
+                    << ", pMatrix = " << &matView
+                    << ")");
 
             // set the projection transform
             // the projection transform matrix
@@ -318,6 +337,9 @@ class polygon_test_renderer
                     znear,
                     zfar);
             d3ddev->SetTransform(D3DTS_PROJECTION, &matProjection);
+            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_PROJECTION
+                    << ", pMatrix = " << &matProjection
+                    << ")");
 
             // select the vertex buffer to display
             d3ddev->SetStreamSource(
@@ -325,6 +347,11 @@ class polygon_test_renderer
                     ctx.get_d3d_vertex_buffer(),
                     0,
                     sizeof(CUSTOMVERTEX));
+            LOGD("IDirect3DDevice9::SetStreamSource(StreamNumber = " << 0
+                    << ", pStreamData = " << ctx.get_d3d_vertex_buffer()
+                    << ", OffsetInBytes = " << 0
+                    << ", Stride = " << sizeof(CUSTOMVERTEX)
+                    << ")");
 
             // a matrix to store the translation for triangle A
             D3DXMATRIX matTranslateA;
@@ -344,15 +371,38 @@ class polygon_test_renderer
             // tell Direct3D about each world transform, and then draw another triangle
             D3DMATRIX matTemp(matTranslateA * matRotateY);
             d3ddev->SetTransform(D3DTS_WORLD, &matTemp);
+            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_WORLD
+                    << ", pMatrix = " << &matProjection
+                    << ")");
             UINT ntriangles = _M_vertices.size() / 3;
             d3ddev->DrawPrimitive(D3DPT_TRIANGLELIST, 0, ntriangles);
+            LOGD("IDirect3DDevice9::DrawPrimitive"
+                    << "(PrimitiveType = " << D3DPT_TRIANGLELIST
+                    << ", StartVertex = " << 0
+                    << ", PrimitiveCount = " << ntriangles
+                    <<  ")");
 
             matTemp = matTranslateB * matRotateY;
             d3ddev->SetTransform(D3DTS_WORLD, &matTemp);
+            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_WORLD
+                    << ", pMatrix = " << &matTemp
+                    << ")");
             d3ddev->DrawPrimitive(D3DPT_TRIANGLELIST, 0, ntriangles);
+            LOGD("IDirect3DDevice9::DrawPrimitive"
+                    << "(PrimitiveType = " << D3DPT_TRIANGLELIST
+                    << ", StartVertex = " << 0
+                    << ", PrimitiveCount = " << ntriangles
+                    <<  ")");
 
             d3ddev->EndScene();
+            LOGD("IDirect3DDevice9::EndScene()");
             d3ddev->Present(NULL, NULL, NULL, NULL);
+            LOGD("IDirect3DDevice9::Present"
+                    << "(pSourceRect = " << static_cast<void*>(NULL)
+                    << ", pDestRect = " << static_cast<void*>(NULL)
+                    << ", hDestWindowOverride = " << static_cast<void*>(NULL)
+                    << ", pDirtyRegion = " << static_cast<void*>(NULL)
+                    << ")");
         }
     protected:
         std::vector<CUSTOMVERTEX> _M_vertices;
@@ -492,6 +542,5 @@ int WINAPI WinMain(
     app.get_window().set_properties(props);
     app.init();
     int rc = app.run();
-    org::foo();
     return rc;
 }
