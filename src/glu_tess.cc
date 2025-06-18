@@ -322,10 +322,14 @@ void glu_tess::on_tess_combine(
             << ", weight = " << weight << "(" << view(4, weight) << ")"
             << ", out_data = " << out_data
             << ")");
-    /**
-     * combiner.spawn() => vertex
-     * combiner.interp(neighbours, weights, vertex);
-     */
+    if (!_M_combiner.get())
+        return;
+    void *r = _M_combiner->spawn_vertex_data();
+    _M_combiner->interp(
+            const_cast<void const**>(vertex_data),
+            weight,
+            r);
+    *out_data = r;
 }
 
 void glu_tess::begin_polyon() {

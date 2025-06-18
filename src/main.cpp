@@ -586,8 +586,8 @@ int WINAPI WinMain(
     props.set_title("MyTest");
     // demo_renderer renderer;
     // concave_polygon_renderer renderer;
-    hole_polygon_renderer renderer;
-    // self_intersect_polygon_renderer renderer;
+    // hole_polygon_renderer renderer;
+    self_intersect_polygon_renderer renderer;
 
     application app(hInstance);
     app.set_renderer(&renderer);

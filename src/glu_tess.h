@@ -13,6 +13,10 @@ namespace org {
 
 class glu_tess {
     public:
+        struct tess_coord {
+            GLdouble _M_data[3];
+        };
+
         typedef void* tess_point;
 
         struct tess_triangle {
@@ -161,6 +165,8 @@ class glu_tess {
         GLUtesselator *_M_tess;
         triangles_type _M_triangles;
         std::auto_ptr<collector> _M_collector;
+        std::auto_ptr<combiner> _M_combiner;
+        std::vector<tess_coord> _M_combined_coords;
 
         glu_tess(glu_tess const&);
         glu_tess& operator=(glu_tess const&);
