@@ -45,22 +45,53 @@ ENUM_ITEM_REP(GLU_TESS_EDGE_FLAG_DATA)
 ENUM_ITEM_REP(GLU_TESS_COMBINE_DATA)
 ENUM_END_REP()
 
+
+template <typename T>
+class array_view {
+    public:
+        typedef T value_type;
+        typedef T *pointer;
+        typedef T const *const_pointer;
+        typedef T &reference;
+        typedef T const &const_reference;
+
+        array_view(void *p, size_t n)
+            :_M_addr(static_cast<pointer>(p)), _M_size(n)
+        {
+        }
+
+        T const& operator[](size_t n) const { return _M_addr[n]; }
+
+        void print(std::ostream &out) const {
+            out << "[";
+            for (size_t i = 0, n = _M_size; i < n; ++i) {
+                if (i != 0)
+                    out << ", ";
+                out << _M_addr[i];
+            }
+            out << "]";
+        }
+
+    protected:
+    private:
+        pointer _M_addr;
+        size_t _M_size;
+};
+
+template <typename E>
+array_view<E> view(size_t n, E *p) {
+    return array_view<E>(p, n);
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream &os, array_view<T> const &view) {
+    view.print(os);
+    return os;
+}
+
 } // namespace anonymous
 
 namespace org {
-
-glu_tess::tess_point::tess_point(GLdouble const *addr)
-    : _M_addr(addr)
-{
-}
-
-GLdouble glu_tess::tess_point::operator[](size_t n) {
-    return _M_addr[n];
-}
-
-void glu_tess::tess_point::print(std::ostream &out) const {
-    out << "[" << _M_addr[0] << ", " << _M_addr[1] << ", " << _M_addr[2] << "]";
-}
 
 glu_tess::tess_triangle::tess_triangle(
         tess_point const &a,
@@ -114,7 +145,7 @@ void glu_tess::triangle_fan_collector::collect(tess_point const &p) {
                 _M_triangle_points[0],
                 _M_triangle_points[1],
                 _M_triangle_points[2]);
-        LOGD(__PRETTY_FUNCTION__ << " triangle = " << t);
+        LOGD("triangle = " << t);
         _M_tess->_M_triangles.push_back(t);
         tess_point tp = _M_triangle_points.back();
         _M_triangle_points.pop_back();
@@ -140,7 +171,7 @@ void glu_tess::triangle_strip_collector::collect(tess_point const &p) {
                 _M_triangle_points[0],
                 _M_triangle_points[1],
                 _M_triangle_points[2]);
-        LOGD(__PRETTY_FUNCTION__ << " triangle = " << t);
+        LOGD("triangle = " << t);
         _M_tess->_M_triangles.push_back(t);
         _M_triangle_points.pop_front();
     }
@@ -162,7 +193,7 @@ void glu_tess::triangles_collector::collect(tess_point const &p) {
                 _M_triangle_points[0],
                 _M_triangle_points[1],
                 _M_triangle_points[2]);
-        LOGD(__PRETTY_FUNCTION__ << " triangle = " << t);
+        LOGD("triangle = " << t);
         _M_tess->_M_triangles.push_back(t);
         _M_triangle_points.clear();
     }
@@ -172,15 +203,17 @@ glu_tess::glu_tess()
     :_M_tess(NULL)
 {
     _M_tess = gluNewTess();
+    LOGD("gluNewTess() = " << _M_tess);
     if (!_M_tess)
         throw std::runtime_error("gluNewTess");
-    this->setup();
+    this->setup_callbacks();
 }
 
 glu_tess::~glu_tess() {
     teardown_callbacks();
     if (_M_tess) {
         gluDeleteTess(_M_tess);
+        LOGD("gluDeleteTess(" << _M_tess << ")");
     }
     _M_tess = NULL;
 }
@@ -205,9 +238,18 @@ void CALLBACK glu_tess::tess_error_callback(GLenum ecode, void *data) {
     t->on_tess_error(ecode);
 }
 
+void CALLBACK glu_tess::tess_combine_callback(
+        GLdouble coords[3],
+        void *vertex_data[4],
+        GLfloat weight[4],
+        void **outData,
+        void *polygon_data) {
+    glu_tess *t = reinterpret_cast<glu_tess*>(polygon_data);
+    t->on_tess_combine(coords, vertex_data, weight, outData);
+}
+
 void glu_tess::set_callback0(GLenum which, tess_callback cb) {
     gluTessCallback(_M_tess, which, cb);
-    gluTessCallback(_M_tess, which, reinterpret_cast<tess_callback>(cb));
     LOGD("gluTessCallback(tess = " << _M_tess
             << ", which = " << nameOfTess(which)
             << ", fn = " << reinterpret_cast<void*>(cb)
@@ -222,6 +264,7 @@ void glu_tess::setup_callbacks() {
     set_callback(GLU_TESS_VERTEX_DATA, &tess_vertex_callback);
     set_callback(GLU_TESS_END_DATA, &tess_end_callback);
     set_callback(GLU_TESS_ERROR_DATA, &tess_error_callback);
+    set_callback(GLU_TESS_COMBINE_DATA, &tess_combine_callback);
 }
 
 void glu_tess::teardown_callbacks() {
@@ -235,6 +278,7 @@ void glu_tess::teardown_callbacks() {
 }
 
 void glu_tess::on_tess_begin(GLenum type) {
+    LOGD("glu_tess::on_tess_begin(type = " << nameOfGLType(type) << ")");
     switch (type) {
         case GL_TRIANGLE_STRIP:
             _M_collector.reset(new triangle_strip_collector(this));
@@ -257,26 +301,41 @@ void glu_tess::on_tess_end() {
     _M_collector.reset();
 }
 
-void glu_tess::on_tess_vertex(void *vertex) {
-    GLdouble *p = static_cast<GLdouble*>(vertex);
-    tess_point tp(p);
-    LOGD(__PRETTY_FUNCTION__);
-    LOGD("x = " << tp[0] << ", y = " << tp[1] << ", z = " << tp[2]);
-    _M_collector->collect(tess_point(p));
+void glu_tess::on_tess_vertex(tess_point vertex) {
+    LOGD("glu_tess::on_tess_vertex"
+            << "(vertex = " << vertex << ")");
+    _M_collector->collect(tess_point(vertex));
 }
 
 void glu_tess::on_tess_error(GLenum ecode) {
     LOGE("glu_tess: " << gluErrorString(ecode));
 }
 
-void glu_tess::begin() {
+void glu_tess::on_tess_combine(
+        GLdouble coords[3],
+        void *vertex_data[4],
+        GLfloat weight[4],
+        void **out_data) {
+    LOGD("glu_tess::on_tess_combine"
+            << "(coords = " << coords << "(" << view(3, coords) << ")"
+            << ", vertex_data = " << vertex_data
+            << ", weight = " << weight << "(" << view(4, weight) << ")"
+            << ", out_data = " << out_data
+            << ")");
+    /**
+     * combiner.spawn() => vertex
+     * combiner.interp(neighbours, weights, vertex);
+     */
+}
+
+void glu_tess::begin_polyon() {
     gluTessBeginPolygon(_M_tess, this);
     LOGD("gluTessBeginPolygon(tess = " << _M_tess
             << ", polygon_data = " << this
             << ")");
 }
 
-void glu_tess::end() {
+void glu_tess::end_polyon() {
     gluTessEndPolygon(_M_tess);
     LOGD("gluTessEndPolygon(tess = " << _M_tess << ")");
 }
@@ -296,8 +355,7 @@ void glu_tess::vertex(GLdouble *coords, void *data) {
     // data can be more than coordinates such as color, normal, UV coordinates
     gluTessVertex(_M_tess, coords, data);
     LOGD("gluTessVertex(tess = " << _M_tess
-            << ", coords = " << coords
-            << "(" << coords[0] << ", " << coords[1] << ", " << coords[2] << ")"
+            << ", coords = " << coords << "(" << view(3, coords) << ")"
             << ", data = " << data
             << ")");
 }
@@ -305,21 +363,6 @@ void glu_tess::vertex(GLdouble *coords, void *data) {
 glu_tess::triangles_type const&
 glu_tess::get_triangles() const {
     return _M_triangles;
-}
-
-void glu_tess::setup() {
-    setup_callbacks();
-}
-
-void glu_tess::teardown() {
-    teardown_callbacks();
-}
-
-std::ostream& operator<<(
-        std::ostream &os,
-        glu_tess::tess_point const& obj) {
-    obj.print(os);
-    return os;
 }
 
 std::ostream& operator<<(

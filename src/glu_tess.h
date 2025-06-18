@@ -13,13 +13,7 @@ namespace org {
 
 class glu_tess {
     public:
-        struct tess_point {
-            explicit tess_point(GLdouble const *addr = NULL);
-            GLdouble operator[](size_t n);
-            void print(std::ostream&) const;
-
-            GLdouble const *_M_addr;
-        };
+        typedef void* tess_point;
 
         struct tess_triangle {
             tess_triangle(
@@ -37,6 +31,14 @@ class glu_tess {
 
         typedef std::vector<tess_triangle> triangles_type;
 
+        struct combiner {
+            virtual void* spawn_vertex_data() = 0;
+            virtual void* interp(
+                    void const *vertex_data[4],
+                    GLfloat const weights[4],
+                    void *r_vertex_data) = 0;
+        };
+
         struct collector {
             explicit collector(glu_tess *tess);
 
@@ -46,6 +48,7 @@ class glu_tess {
 
             virtual void collect(tess_point const &tp);
 
+            // just a pointer for nullable reference
             glu_tess *_M_tess;
         };
 
@@ -87,40 +90,9 @@ class glu_tess {
 
         virtual ~glu_tess();
 
-        static
-        void CALLBACK tess_begin_callback(GLenum type, void *data);
+        void begin_polyon();
 
-        static
-        void CALLBACK tess_end_callback(void *data);
-
-        static
-        void CALLBACK tess_vertex_callback(void *vertex, void *data);
-
-        static
-        void CALLBACK tess_error_callback(GLenum ecode, void *data);
-
-        void set_callback0(GLenum which, tess_callback);
-
-        template <typename T>
-        void set_callback(GLenum which, T cb) {
-            set_callback0(which, reinterpret_cast<tess_callback>(cb));
-        }
-
-        void setup_callbacks();
-
-        void teardown_callbacks();
-
-        void on_tess_begin(GLenum type);
-
-        void on_tess_end();
-
-        void on_tess_vertex(void *vertex);
-
-        void on_tess_error(GLenum ecode);
-
-        void begin();
-
-        void end();
+        void end_polyon();
 
         // contour automatically connect the last vertex to the first one
         void begin_contour();
@@ -141,8 +113,50 @@ class glu_tess {
 
         triangles_type const& get_triangles() const;
     protected:
-        void setup();
-        void teardown();
+        static
+        void CALLBACK tess_begin_callback(GLenum type, void *data);
+
+        static
+        void CALLBACK tess_end_callback(void *data);
+
+        static
+        void CALLBACK tess_vertex_callback(void *vertex, void *data);
+
+        static
+        void CALLBACK tess_error_callback(GLenum ecode, void *data);
+
+        static
+        void CALLBACK tess_combine_callback(
+                GLdouble coords[3],
+                void *vertex_data[4],
+                GLfloat weight[4],
+                void **outData,
+                void *polygon_data);
+
+        void set_callback0(GLenum which, tess_callback);
+
+        template <typename T>
+        void set_callback(GLenum which, T cb) {
+            set_callback0(which, reinterpret_cast<tess_callback>(cb));
+        }
+
+        void setup_callbacks();
+
+        void teardown_callbacks();
+
+        void on_tess_begin(GLenum type);
+
+        void on_tess_end();
+
+        void on_tess_vertex(tess_point vertex);
+
+        void on_tess_error(GLenum ecode);
+
+        void on_tess_combine(
+                GLdouble coords[3],
+                void *vertex_data[4],
+                GLfloat weight[4],
+                void **outData);
     private:
         GLUtesselator *_M_tess;
         triangles_type _M_triangles;
@@ -152,7 +166,6 @@ class glu_tess {
         glu_tess& operator=(glu_tess const&);
 };
 
-std::ostream& operator<<(std::ostream&, glu_tess::tess_point const&);
 std::ostream& operator<<(std::ostream&, glu_tess::tess_triangle const&);
 
 } // namespace org

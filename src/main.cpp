@@ -196,7 +196,7 @@ class polygon_test_renderer
             };
 
             org::glu_tess tess;
-            tess.begin();
+            tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
             tess.vertex(quad[1], quad[1]);
@@ -210,7 +210,7 @@ class polygon_test_renderer
             tess.vertex(quad[6], quad[6]);
             tess.vertex(quad[7], quad[7]);
             tess.end_contour();
-            tess.end();
+            tess.end_polyon();
             typedef org::glu_tess::triangles_type triangles_type;
             typedef triangles_type::const_iterator const_iterator;
 
@@ -225,9 +225,9 @@ class polygon_test_renderer
             for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
                 CUSTOMVERTEX v[3];
                 for (int i = 0, n = 3; i < n; ++i) {
-                    v[i].X = (*it)[i][0];
-                    v[i].Y = (*it)[i][1];
-                    v[i].Z = (*it)[i][2];
+                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
+                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
+                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
                     v[i].COLOR = colors[(idx++ % 3)];
                     _M_vertices.push_back(v[i]);
                 }
@@ -418,13 +418,13 @@ class concave_polygon_renderer
         void create_triangles() {
             GLdouble quad[][3] = {
                 {-1,3,0},
-                {0,0,0},
+                {0,0,1},
                 {1,3,0},
-                {0,2,0}
+                {0,2,1}
             };
 
             org::glu_tess tess;
-            tess.begin();
+            tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
             tess.vertex(quad[1], quad[1]);
@@ -432,7 +432,7 @@ class concave_polygon_renderer
             tess.vertex(quad[3], quad[3]);
             // contour automatically connect the last vertex to the first one
             tess.end_contour();
-            tess.end();
+            tess.end_polyon();
             typedef org::glu_tess::triangles_type triangles_type;
             typedef triangles_type::const_iterator const_iterator;
 
@@ -447,9 +447,9 @@ class concave_polygon_renderer
             for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
                 CUSTOMVERTEX v[3];
                 for (int i = 0, n = 3; i < n; ++i) {
-                    v[i].X = (*it)[i][0];
-                    v[i].Y = (*it)[i][1];
-                    v[i].Z = (*it)[i][2];
+                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
+                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
+                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
                     v[i].COLOR = colors[(idx++ % 3)];
                     _M_vertices.push_back(v[i]);
                 }
@@ -478,7 +478,7 @@ class hole_polygon_renderer
             };
 
             org::glu_tess tess;
-            tess.begin();
+            tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
             tess.vertex(quad[1], quad[1]);
@@ -492,7 +492,7 @@ class hole_polygon_renderer
             tess.vertex(quad[6], quad[6]);
             tess.vertex(quad[7], quad[7]);
             tess.end_contour();
-            tess.end();
+            tess.end_polyon();
             typedef org::glu_tess::triangles_type triangles_type;
             typedef triangles_type::const_iterator const_iterator;
 
@@ -507,9 +507,60 @@ class hole_polygon_renderer
             for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
                 CUSTOMVERTEX v[3];
                 for (int i = 0, n = 3; i < n; ++i) {
-                    v[i].X = (*it)[i][0];
-                    v[i].Y = (*it)[i][1];
-                    v[i].Z = (*it)[i][2];
+                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
+                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
+                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
+                    v[i].COLOR = colors[(idx++ % 3)];
+                    _M_vertices.push_back(v[i]);
+                }
+            }
+        }
+};
+
+class self_intersect_polygon_renderer
+    : public polygon_test_renderer
+{
+    public:
+        virtual
+        void create_triangles() {
+            // x,y,z,r,g,b
+            GLdouble star[][6] = {
+                {0.0, 3.0, 0,  1, 0, 0},
+                {-1.0, 0.0, 0,  0, 1, 0},
+                {1.6, 1.9, 0,  1, 0, 1},
+                {-1.6, 1.9, 0,  1, 1, 0},
+                {1.0, 0.0, 0,  0, 0, 1}
+            };
+
+
+            org::glu_tess tess;
+            tess.begin_polyon();
+            tess.begin_contour();
+            tess.vertex(star[0], star[0]);
+            tess.vertex(star[1], star[1]);
+            tess.vertex(star[2], star[2]);
+            tess.vertex(star[3], star[3]);
+            tess.vertex(star[4], star[4]);
+            // contour automatically connect the last vertex to the first one
+            tess.end_contour();
+            tess.end_polyon();
+            typedef org::glu_tess::triangles_type triangles_type;
+            typedef triangles_type::const_iterator const_iterator;
+
+            triangles_type const &t = tess.get_triangles();
+            int idx = 0;
+            D3DCOLOR colors[] = {
+                D3DCOLOR_XRGB(0, 0, 255),
+                D3DCOLOR_XRGB(0, 255, 0),
+                D3DCOLOR_XRGB(255, 0, 0),
+            };
+
+            for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
+                CUSTOMVERTEX v[3];
+                for (int i = 0, n = 3; i < n; ++i) {
+                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
+                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
+                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
                     v[i].COLOR = colors[(idx++ % 3)];
                     _M_vertices.push_back(v[i]);
                 }
@@ -534,8 +585,9 @@ int WINAPI WinMain(
     window_properties props;
     props.set_title("MyTest");
     // demo_renderer renderer;
-    // hole_polygon_renderer renderer;
-    concave_polygon_renderer renderer;
+    // concave_polygon_renderer renderer;
+    hole_polygon_renderer renderer;
+    // self_intersect_polygon_renderer renderer;
 
     application app(hInstance);
     app.set_renderer(&renderer);
