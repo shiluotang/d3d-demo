@@ -101,6 +101,23 @@ void glu_tess::collector::end() {
 void glu_tess::collector::collect(tess_point const &tp) {
 }
 
+glu_tess::triangle_fan_collector::triangle_fan_collector(glu_tess *tess)
+    : collector(tess)
+{
+}
+
+void glu_tess::triangle_fan_collector::collect(tess_point const &p) {
+    if (_M_triangle_points.size() < 3)
+        _M_triangle_points.push_back(p);
+    tess_triangle t(
+            _M_triangle_points[0],
+            _M_triangle_points[1],
+            _M_triangle_points[2]);
+    _M_tess->_M_triangles.push_back(t);
+    _M_triangle_points.pop_back();
+    _M_triangle_points.pop_back();
+}
+
 glu_tess::triangle_strip_collector::triangle_strip_collector(
         glu_tess *tess) :collector(tess)
 {
@@ -216,6 +233,9 @@ void glu_tess::on_tess_begin(GLenum type) {
     switch (type) {
         case GL_TRIANGLE_STRIP:
             _M_collector.reset(new triangle_strip_collector(this));
+            break;
+        case GL_TRIANGLE_FAN:
+            _M_collector.reset(new triangle_fan_collector(this));
             break;
         case GL_TRIANGLES:
             _M_collector.reset(new triangles_collector(this));

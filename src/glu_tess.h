@@ -49,8 +49,17 @@ class glu_tess {
             glu_tess *_M_tess;
         };
 
+        friend struct triangle_fan_collector;
         friend struct triangle_strip_collector;
         friend struct triangles_collector;
+
+        struct triangle_fan_collector : collector {
+            explicit triangle_fan_collector(glu_tess*);
+
+            virtual void collect(tess_point const&);
+
+            std::deque<tess_point> _M_triangle_points;
+        };
 
         struct triangle_strip_collector : collector {
             explicit triangle_strip_collector(glu_tess*);
