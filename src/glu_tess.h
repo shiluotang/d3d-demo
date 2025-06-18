@@ -128,6 +128,15 @@ class glu_tess {
         // contour automatically connect the last vertex to the first one
         void end_contour();
 
+        /**
+         * feed vertex coordinates and callback data to glu tesselator.
+         *
+         * The second parameter is the data received in callback.
+         *
+         * @param[in] coords is contignous 3d coordinates for tessellation only
+         * @param[in] data can be more than coordinates such as color, normal,
+         * UV coordinates.
+         */
         void vertex(GLdouble *coords, void *data = NULL);
 
         triangles_type const& get_triangles() const;

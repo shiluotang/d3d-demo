@@ -182,16 +182,16 @@ class hole_polygon_renderer
         void create_triangles() {
             GLdouble quad[][3] = {
                 // CW (clockwise)
-                { -2, 0, 0 },
-                { -2, 3, 0 },
-                { 2, 3, 0 },
-                { 2, 0, 0 },
+                { -2, 0, 1 },
+                { -2, 3, 1 },
+                { 2, 3, 1 },
+                { 2, 0, 1 },
 
                 // CCW (counter clockwise)
-                { -1, 1, 0 },
-                { -1, 2, 0 },
-                {  1, 2, 0 },
-                { 1, 1, 0 },
+                { -1, 1, 2 },
+                { -1, 2, 2 },
+                {  1, 2, 2 },
+                { 1, 1, 2 },
             };
 
             org::glu_tess tess;

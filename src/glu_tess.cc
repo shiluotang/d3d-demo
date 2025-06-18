@@ -287,7 +287,8 @@ void glu_tess::end_contour() {
 }
 
 void glu_tess::vertex(GLdouble *coords, void *data) {
-    // where is the purpose of data (polygon_data) parameter
+    // coords is contignous 3d coordinates for tessellation only
+    // data can be more than coordinates such as color, normal, UV coordinates
     gluTessVertex(_M_tess, coords, data);
     LOGD("gluTessVertex(tess = " << _M_tess
             << ", coords = " << coords
