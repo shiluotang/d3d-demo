@@ -101,10 +101,14 @@ class glu_tess_raw {
         struct line_loop_collector : collector {
             explicit line_loop_collector(glu_tess_raw*);
 
+            virtual void begin();
+
             virtual void end();
 
             virtual void collect(tess_point const &p);
 
+            bool _M_starting;
+            tess_point _M_p0;
             std::deque<tess_point> _M_line_points;
         };
 

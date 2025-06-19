@@ -237,16 +237,24 @@ glu_tess_raw::line_loop_collector::line_loop_collector(glu_tess_raw *tess)
     : collector(tess) {
 }
 
+void glu_tess_raw::line_loop_collector::begin() {
+    _M_starting = true;
+}
+
 void glu_tess_raw::line_loop_collector::end() {
     if (_M_line_points.size() == 1) {
         // connect to the first point
-        tess_line line(_M_line_points[0], _M_tess->_M_lines[0][0]);
+        tess_line line(_M_line_points[0], _M_p0);
         LOGD("line = " << line);
         _M_tess->_M_lines.push_back(line);
     }
 }
 
 void glu_tess_raw::line_loop_collector::collect(tess_point const &p) {
+    if (_M_starting) {
+        _M_p0 = p;
+        _M_starting = false;
+    }
     if (_M_line_points.size() < 2)
         _M_line_points.push_back(p);
     if (_M_line_points.size() == 2) {
