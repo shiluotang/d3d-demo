@@ -395,12 +395,13 @@ class polygon_test_renderer
             LOGD("IDirect3DDevice9::SetTransform(State = " << org::nameOfTransformState(D3DTS_WORLD)
                     << ", pMatrix = " << &matProjection
                     << ")");
-            UINT ntriangles = _M_vertices.size() / 3;
-            d3ddev->DrawPrimitive(_M_primitive_type, 0, ntriangles);
+            UINT nvertices = _M_primitive_type == D3DPT_TRIANGLELIST ? 3 : 2;
+            UINT primitive_count = _M_vertices.size() / nvertices;
+            d3ddev->DrawPrimitive(_M_primitive_type, 0, primitive_count);
             LOGD("IDirect3DDevice9::DrawPrimitive"
                     << "(PrimitiveType = " << org::nameOfPrimitiveType(_M_primitive_type)
                     << ", StartVertex = " << 0
-                    << ", PrimitiveCount = " << ntriangles
+                    << ", PrimitiveCount = " << primitive_count
                     <<  ")");
 
             matTemp = matTranslateB * matRotateY;
@@ -408,11 +409,11 @@ class polygon_test_renderer
             LOGD("IDirect3DDevice9::SetTransform(State = " << org::nameOfTransformState(D3DTS_WORLD)
                     << ", pMatrix = " << &matTemp
                     << ")");
-            d3ddev->DrawPrimitive(_M_primitive_type, 0, ntriangles);
+            d3ddev->DrawPrimitive(_M_primitive_type, 0, primitive_count);
             LOGD("IDirect3DDevice9::DrawPrimitive"
                     << "(PrimitiveType = " << org::nameOfPrimitiveType(_M_primitive_type)
                     << ", StartVertex = " << 0
-                    << ", PrimitiveCount = " << ntriangles
+                    << ", PrimitiveCount = " << primitive_count
                     <<  ")");
 
             d3ddev->EndScene();

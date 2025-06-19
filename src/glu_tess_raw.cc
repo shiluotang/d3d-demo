@@ -238,6 +238,12 @@ glu_tess_raw::line_loop_collector::line_loop_collector(glu_tess_raw *tess)
 }
 
 void glu_tess_raw::line_loop_collector::end() {
+    if (_M_line_points.size() == 1) {
+        // connect to the first point
+        tess_line line(_M_line_points[0], _M_tess->_M_lines[0][0]);
+        LOGD("line = " << line);
+        _M_tess->_M_lines.push_back(line);
+    }
 }
 
 void glu_tess_raw::line_loop_collector::collect(tess_point const &p) {
