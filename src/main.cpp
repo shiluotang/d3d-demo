@@ -15,7 +15,7 @@
 #include "renderer.h"
 #include "d3d_context.h"
 #include "application.h"
-#include "glu_tess.h"
+#include "glu_tess_raw.h"
 
 namespace {
 
@@ -179,8 +179,7 @@ class polygon_test_renderer
         polygon_test_renderer() {
         }
 
-        virtual
-        void create_triangles() {
+        virtual void create_triangles_or_lines() {
             GLdouble quad[][3] = {
                 // CW (clockwise)
                 { -2, 0, 1 },
@@ -191,11 +190,11 @@ class polygon_test_renderer
                 // CCW (counter clockwise)
                 { -1, 1, 2 },
                 { -1, 2, 2 },
-                {  1, 2, 2 },
+                { 1, 2, 2 },
                 { 1, 1, 2 },
             };
 
-            org::glu_tess tess;
+            org::glu_tess_raw tess;
             tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
@@ -211,26 +210,48 @@ class polygon_test_renderer
             tess.vertex(quad[7], quad[7]);
             tess.end_contour();
             tess.end_polyon();
-            typedef org::glu_tess::triangles_type triangles_type;
-            typedef triangles_type::const_iterator const_iterator;
+            this->set_type_and_vertices(tess);
+        }
 
-            triangles_type const &t = tess.get_triangles();
-            int idx = 0;
+        virtual void set_type_and_vertices(org::glu_tess_raw &tess) {
+            typedef org::glu_tess_raw::triangles_type triangles_type;
+            typedef org::glu_tess_raw::lines_type lines_type;
             D3DCOLOR colors[] = {
                 D3DCOLOR_XRGB(0, 0, 255),
                 D3DCOLOR_XRGB(0, 255, 0),
                 D3DCOLOR_XRGB(255, 0, 0),
             };
-
-            for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
-                CUSTOMVERTEX v[3];
-                for (int i = 0, n = 3; i < n; ++i) {
-                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
-                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
-                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
-                    v[i].COLOR = colors[(idx++ % 3)];
-                    _M_vertices.push_back(v[i]);
+            if (tess.get_triangles().size() > 0)
+            {
+                typedef triangles_type::const_iterator const_iterator;
+                triangles_type const &t = tess.get_triangles();
+                int idx = 0;
+                for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
+                    CUSTOMVERTEX v[3];
+                    for (int i = 0, n = 3; i < n; ++i) {
+                        v[i].X = static_cast<GLdouble*>((*it)[i])[0];
+                        v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
+                        v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
+                        v[i].COLOR = colors[(idx++ % 3)];
+                        _M_vertices.push_back(v[i]);
+                    }
                 }
+                _M_primitive_type = D3DPT_TRIANGLELIST;
+            } else if (tess.get_lines().size() > 0) {
+                typedef lines_type::const_iterator const_iterator;
+                lines_type const &t = tess.get_lines();
+                int idx = 0;
+                for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
+                    CUSTOMVERTEX v[2];
+                    for (int i = 0, n = 2; i < n; ++i) {
+                        v[i].X = static_cast<GLdouble*>((*it)[i])[0];
+                        v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
+                        v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
+                        v[i].COLOR = colors[(idx++ % 3)];
+                        _M_vertices.push_back(v[i]);
+                    }
+                }
+                _M_primitive_type = D3DPT_LINELIST;
             }
         }
 
@@ -240,7 +261,7 @@ class polygon_test_renderer
             index = 0;
             LPDIRECT3DDEVICE9 d3ddev = ctx.get_d3d_device();
             LPDIRECT3DVERTEXBUFFER9 vertexbuffer = NULL;
-            this->create_triangles();
+            this->create_triangles_or_lines();
             // create a vertex buffer interface called v_buffer
             rc = d3ddev->CreateVertexBuffer(
                     sizeof(_M_vertices[0]) * _M_vertices.size(),
@@ -318,7 +339,7 @@ class polygon_test_renderer
 
             D3DXMatrixLookAtLH(&matView, &camPos, &lookAt, &up);
             d3ddev->SetTransform(D3DTS_VIEW, &matView);
-            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_VIEW
+            LOGD("IDirect3DDevice9::SetTransform(State = " << org::nameOfTransformState(D3DTS_VIEW)
                     << ", pMatrix = " << &matView
                     << ")");
 
@@ -337,7 +358,7 @@ class polygon_test_renderer
                     znear,
                     zfar);
             d3ddev->SetTransform(D3DTS_PROJECTION, &matProjection);
-            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_PROJECTION
+            LOGD("IDirect3DDevice9::SetTransform(State = " << org::nameOfTransformState(D3DTS_PROJECTION)
                     << ", pMatrix = " << &matProjection
                     << ")");
 
@@ -371,25 +392,25 @@ class polygon_test_renderer
             // tell Direct3D about each world transform, and then draw another triangle
             D3DMATRIX matTemp(matTranslateA * matRotateY);
             d3ddev->SetTransform(D3DTS_WORLD, &matTemp);
-            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_WORLD
+            LOGD("IDirect3DDevice9::SetTransform(State = " << org::nameOfTransformState(D3DTS_WORLD)
                     << ", pMatrix = " << &matProjection
                     << ")");
             UINT ntriangles = _M_vertices.size() / 3;
-            d3ddev->DrawPrimitive(D3DPT_TRIANGLELIST, 0, ntriangles);
+            d3ddev->DrawPrimitive(_M_primitive_type, 0, ntriangles);
             LOGD("IDirect3DDevice9::DrawPrimitive"
-                    << "(PrimitiveType = " << D3DPT_TRIANGLELIST
+                    << "(PrimitiveType = " << org::nameOfPrimitiveType(_M_primitive_type)
                     << ", StartVertex = " << 0
                     << ", PrimitiveCount = " << ntriangles
                     <<  ")");
 
             matTemp = matTranslateB * matRotateY;
             d3ddev->SetTransform(D3DTS_WORLD, &matTemp);
-            LOGD("IDirect3DDevice9::SetTransform(State = " << D3DTS_WORLD
+            LOGD("IDirect3DDevice9::SetTransform(State = " << org::nameOfTransformState(D3DTS_WORLD)
                     << ", pMatrix = " << &matTemp
                     << ")");
-            d3ddev->DrawPrimitive(D3DPT_TRIANGLELIST, 0, ntriangles);
+            d3ddev->DrawPrimitive(_M_primitive_type, 0, ntriangles);
             LOGD("IDirect3DDevice9::DrawPrimitive"
-                    << "(PrimitiveType = " << D3DPT_TRIANGLELIST
+                    << "(PrimitiveType = " << org::nameOfPrimitiveType(_M_primitive_type)
                     << ", StartVertex = " << 0
                     << ", PrimitiveCount = " << ntriangles
                     <<  ")");
@@ -406,6 +427,7 @@ class polygon_test_renderer
         }
     protected:
         std::vector<CUSTOMVERTEX> _M_vertices;
+        D3DPRIMITIVETYPE _M_primitive_type;
     private:
         float index;
 };
@@ -415,7 +437,7 @@ class concave_polygon_renderer
 {
     public:
         virtual
-        void create_triangles() {
+        void create_triangles_or_lines() {
             GLdouble quad[][3] = {
                 {-1,3,0},
                 {0,0,1},
@@ -423,7 +445,7 @@ class concave_polygon_renderer
                 {0,2,1}
             };
 
-            org::glu_tess tess;
+            org::glu_tess_raw tess;
             tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
@@ -433,27 +455,7 @@ class concave_polygon_renderer
             // contour automatically connect the last vertex to the first one
             tess.end_contour();
             tess.end_polyon();
-            typedef org::glu_tess::triangles_type triangles_type;
-            typedef triangles_type::const_iterator const_iterator;
-
-            triangles_type const &t = tess.get_triangles();
-            int idx = 0;
-            D3DCOLOR colors[] = {
-                D3DCOLOR_XRGB(0, 0, 255),
-                D3DCOLOR_XRGB(0, 255, 0),
-                D3DCOLOR_XRGB(255, 0, 0),
-            };
-
-            for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
-                CUSTOMVERTEX v[3];
-                for (int i = 0, n = 3; i < n; ++i) {
-                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
-                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
-                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
-                    v[i].COLOR = colors[(idx++ % 3)];
-                    _M_vertices.push_back(v[i]);
-                }
-            }
+            this->set_type_and_vertices(tess);
         }
 };
 
@@ -462,7 +464,7 @@ class hole_polygon_renderer
 {
     public:
         virtual
-        void create_triangles() {
+        void create_triangles_or_lines() {
             GLdouble quad[][3] = {
                 // CW (clockwise)
                 { -2, 0, 1 },
@@ -477,7 +479,7 @@ class hole_polygon_renderer
                 { 1, 1, 2 },
             };
 
-            org::glu_tess tess;
+            org::glu_tess_raw tess;
             tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
@@ -493,27 +495,7 @@ class hole_polygon_renderer
             tess.vertex(quad[7], quad[7]);
             tess.end_contour();
             tess.end_polyon();
-            typedef org::glu_tess::triangles_type triangles_type;
-            typedef triangles_type::const_iterator const_iterator;
-
-            triangles_type const &t = tess.get_triangles();
-            int idx = 0;
-            D3DCOLOR colors[] = {
-                D3DCOLOR_XRGB(0, 0, 255),
-                D3DCOLOR_XRGB(0, 255, 0),
-                D3DCOLOR_XRGB(255, 0, 0),
-            };
-
-            for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
-                CUSTOMVERTEX v[3];
-                for (int i = 0, n = 3; i < n; ++i) {
-                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
-                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
-                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
-                    v[i].COLOR = colors[(idx++ % 3)];
-                    _M_vertices.push_back(v[i]);
-                }
-            }
+            this->set_type_and_vertices(tess);
         }
 };
 
@@ -521,8 +503,31 @@ class self_intersect_polygon_renderer
     : public polygon_test_renderer
 {
     public:
+        struct mytess : public org::glu_tess_raw {
+            public:
+                virtual void on_tess_combine(
+                        GLdouble coords[3],
+                        void *vertex_data[4],
+                        GLfloat weight[4],
+                        void **out_data) {
+                    // TODO deallocate
+                    double *data = new double[6];
+                    data[0] = coords[0];
+                    data[1] = coords[1];
+                    data[2] = coords[2];
+
+                    for (int j = 3; j < 5; ++j) {
+                        GLdouble sum = 0;
+                        for (int i = 0, n = 4; i < n; ++i)
+                            sum += static_cast<GLdouble*>(vertex_data[i])[j] * weight[i];
+                        data[j] = sum;
+                    }
+                    *out_data = data;
+                }
+        };
+
         virtual
-        void create_triangles() {
+        void create_triangles_or_lines() {
             // x,y,z,r,g,b
             GLdouble star[][6] = {
                 {0.0, 3.0, 0,  1, 0, 0},
@@ -532,8 +537,10 @@ class self_intersect_polygon_renderer
                 {1.0, 0.0, 0,  0, 0, 1}
             };
 
-
-            org::glu_tess tess;
+            mytess tt;
+            org::glu_tess_raw &tess = tt;
+            tess.set_winding_rule(org::glu_tess_raw::NONZERO);
+            tess.set_boundary_only(true);
             tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(star[0], star[0]);
@@ -544,27 +551,7 @@ class self_intersect_polygon_renderer
             // contour automatically connect the last vertex to the first one
             tess.end_contour();
             tess.end_polyon();
-            typedef org::glu_tess::triangles_type triangles_type;
-            typedef triangles_type::const_iterator const_iterator;
-
-            triangles_type const &t = tess.get_triangles();
-            int idx = 0;
-            D3DCOLOR colors[] = {
-                D3DCOLOR_XRGB(0, 0, 255),
-                D3DCOLOR_XRGB(0, 255, 0),
-                D3DCOLOR_XRGB(255, 0, 0),
-            };
-
-            for (const_iterator it = t.begin(), e = t.end(); it != e; ++it) {
-                CUSTOMVERTEX v[3];
-                for (int i = 0, n = 3; i < n; ++i) {
-                    v[i].X = static_cast<GLdouble*>((*it)[i])[0];
-                    v[i].Y = static_cast<GLdouble*>((*it)[i])[1];
-                    v[i].Z = static_cast<GLdouble*>((*it)[i])[2];
-                    v[i].COLOR = colors[(idx++ % 3)];
-                    _M_vertices.push_back(v[i]);
-                }
-            }
+            this->set_type_and_vertices(tess);
         }
 };
 
@@ -584,6 +571,7 @@ int WINAPI WinMain(
 
     window_properties props;
     props.set_title("MyTest");
+    // polygon_test_renderer renderer;
     // demo_renderer renderer;
     // concave_polygon_renderer renderer;
     // hole_polygon_renderer renderer;

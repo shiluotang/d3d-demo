@@ -3,7 +3,12 @@
 
 #include <d3d9.h>
 
+#include <string>
+
 namespace org {
+
+std::string nameOfPrimitiveType(D3DPRIMITIVETYPE);
+std::string nameOfTransformState(D3DTRANSFORMSTATETYPE);
 
 class window;
 class d3d_context {
