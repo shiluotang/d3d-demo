@@ -23,8 +23,10 @@ class application {
         d3d_context& get_d3d_context();
 
         void init();
-        int run();
+        int run(int secs = 0);
     protected:
+        int run_forever();
+        int run_for(unsigned int secs);
     private:
         window _M_window;
         d3d_context _M_d3d_ctx;

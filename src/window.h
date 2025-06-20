@@ -16,7 +16,8 @@ class window {
                 WPARAM wParam,
                 LPARAM lParam);
 
-        window(HINSTANCE hinstance);
+        explicit window(HINSTANCE hinstance);
+        virtual ~window();
         window_properties const& get_properties() const;
         void set_properties(window_properties const &value);
 
@@ -32,6 +33,9 @@ class window {
         void hide();
 
     protected:
+        void register_class();
+        void unregister_class();
+
         void register_current_window();
 
         static
@@ -42,6 +46,7 @@ class window {
         HINSTANCE _M_hinstance;
         window_properties _M_props;
         HWND _M_hwnd;
+        WNDCLASSEX _M_wndclass;
 };
 
 } // namespace org

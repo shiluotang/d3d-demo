@@ -1,3 +1,4 @@
+#include <ctime>
 #include <windows.h>
 
 #include "window.h"
@@ -47,7 +48,7 @@ void application::init() {
 application::~application() {
 }
 
-int application::run() {
+int application::run_forever() {
     _M_window.show();
     MSG msg;
     while (msg.message != WM_QUIT) {
@@ -70,6 +71,41 @@ int application::run() {
             _M_renderer->update(_M_window, _M_d3d_ctx);
     }
     return msg.wParam;
+}
+
+int application::run_for(unsigned int secs) {
+    _M_window.show();
+    MSG msg;
+    time_t t0 = std::time(NULL);
+    time_t t1 = t0;
+    while (msg.message != WM_QUIT
+            && std::difftime(t1, t0) < secs) {
+        // There's a WM_TIMER after WM_QUIT, so this internal loop will quit
+        // with msg.message == WM_TIMER which means never exit the outer loop.
+        while (PeekMessage(
+                    &msg,
+                    NULL,
+                    0,
+                    0,
+                    PM_REMOVE)) {
+            if (msg.message == WM_QUIT)
+                break;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        if (msg.message == WM_QUIT)
+            continue;
+        if (_M_renderer)
+            _M_renderer->update(_M_window, _M_d3d_ctx);
+        t1 = std::time(NULL);
+    }
+    return msg.wParam;
+}
+
+int application::run(int secs) {
+    if (secs <= 0)
+        return run_forever();
+    return run_for(secs);
 }
 
 } // namespace org

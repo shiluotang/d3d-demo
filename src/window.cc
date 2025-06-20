@@ -48,6 +48,20 @@ window::window(HINSTANCE hinstance)
 {
 }
 
+window::~window() {
+    if (_M_hwnd) {
+        WINBOOL rc = 0;
+        LOGD(">>> CloseWindow(" << _M_hwnd << ")");
+        rc = CloseWindow(_M_hwnd);
+        LOGD("<<< CloseWindow(" << _M_hwnd << ") = " << rc);
+        LOGD(">>> DestroyWindow(" << _M_hwnd << ")");
+        rc = DestroyWindow(_M_hwnd);
+        LOGD("<<< DestroyWindow(" << _M_hwnd << ") = " << rc);
+        _M_hwnd = NULL;
+        unregister_class();
+    }
+}
+
 window_properties const& window::get_properties() const {
     return _M_props;
 }
@@ -67,21 +81,7 @@ void window::set_handle(HWND value) {
 
 void window::create() {
     HWND hwnd;
-    WNDCLASSEX wc;
     MSG msg;
-
-    LPCSTR lpClassName = "WindowsClass";
-    memset(&wc,0,sizeof(wc));
-    wc.cbSize        = sizeof(WNDCLASSEX);
-    wc.lpfnWndProc   = &window::WindowProc;
-    wc.hInstance     = _M_hinstance;
-    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
-    wc.lpszClassName = lpClassName;
-    wc.hIcon         = NULL;
-    wc.hIconSm       = NULL;
-    ATOM rc = RegisterClassEx(&wc);
-    LOGD("RegisterClassEx(wndClass = " << &wc << ") = " << rc);
 
     DWORD dwExStyle = 0;
     LPCSTR lpWindowName = _M_props.get_title().c_str();
@@ -95,7 +95,7 @@ void window::create() {
     LPVOID lpParam = NULL;
     hwnd = CreateWindowEx(
             dwExStyle,
-            lpClassName,
+            _M_wndclass.lpszClassName,
             lpWindowName,
             dwStyle,
             x, y,
@@ -105,7 +105,7 @@ void window::create() {
             _M_hinstance,
             lpParam);
     LOGD("CreateWindowEx(dwExStyle = " << reinterpret_cast<void*>(dwExStyle)
-            << ", lpClassName = " << lpClassName
+            << ", lpClassName = " << _M_wndclass.lpszClassName
             << ", dwStyle = " << reinterpret_cast<void*>(dwStyle)
             << ", X = " << x
             << ", Y = " << y
@@ -120,7 +120,41 @@ void window::create() {
     this->register_current_window();
 }
 
+void window::register_class() {
+    // little trick to make sure lpClassName member of WNDCLASSEX valid until
+    // unregister
+    static std::string name = "WindowClass";
+
+    WNDCLASSEX &wc = _M_wndclass;
+    LPCSTR lpClassName = name.c_str();
+    memset(&wc,0,sizeof(wc));
+    wc.cbSize        = sizeof(WNDCLASSEX);
+    wc.lpfnWndProc   = &window::WindowProc;
+    wc.hInstance     = _M_hinstance;
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
+    wc.lpszClassName = lpClassName;
+    wc.hIcon         = NULL;
+    wc.hIconSm       = NULL;
+    ATOM rc = RegisterClassEx(&wc);
+    LOGD("RegisterClassEx("
+            << "wndClass = " << &wc
+            << "(" << wc.lpszClassName << ")"
+            << ") = " << rc);
+}
+
+void window::unregister_class() {
+    WNDCLASSEX &wc = _M_wndclass;
+    WINBOOL rc = UnregisterClass(
+            wc.lpszClassName,
+            _M_hinstance);
+    LOGD("UnregisterClass(wndClass = " << &wc
+            << "(" << wc.lpszClassName << ")"
+            << ") = " << rc);
+}
+
 void window::init() {
+    this->register_class();
     this->create();
 }
 

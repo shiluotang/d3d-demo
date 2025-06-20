@@ -447,6 +447,7 @@ class concave_polygon_renderer
             };
 
             org::glu_tess_raw tess;
+            tess.set_boundary_only(true);
             tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
@@ -476,11 +477,12 @@ class hole_polygon_renderer
                 // CCW (counter clockwise)
                 { -1, 1, 2 },
                 { -1, 2, 2 },
-                {  1, 2, 2 },
+                { 1, 2, 2 },
                 { 1, 1, 2 },
             };
 
             org::glu_tess_raw tess;
+            tess.set_boundary_only(true);
             tess.begin_polyon();
             tess.begin_contour();
             tess.vertex(quad[0], quad[0]);
@@ -506,13 +508,18 @@ class self_intersect_polygon_renderer
     public:
         struct mytess : public org::glu_tess_raw {
             public:
+                virtual ~mytess() {
+                    for (size_t i = 0, n = _M_allocated_data.size(); i < n; ++i)
+                        _M_allocator.deallocate(_M_allocated_data[i], 6);
+                    _M_allocated_data.clear();
+                }
+            protected:
                 virtual void on_tess_combine(
                         GLdouble coords[3],
                         void *vertex_data[4],
                         GLfloat weight[4],
                         void **out_data) {
-                    // TODO deallocate
-                    double *data = new double[6];
+                    GLdouble *data = _M_allocator.allocate(6);
                     data[0] = coords[0];
                     data[1] = coords[1];
                     data[2] = coords[2];
@@ -523,8 +530,12 @@ class self_intersect_polygon_renderer
                             sum += static_cast<GLdouble*>(vertex_data[i])[j] * weight[i];
                         data[j] = sum;
                     }
+                    _M_allocated_data.push_back(data);
                     *out_data = data;
                 }
+            private:
+                std::vector<GLdouble*> _M_allocated_data;
+                std::allocator<GLdouble> _M_allocator;
         };
 
         virtual
@@ -572,8 +583,8 @@ int WINAPI WinMain(
 
     window_properties props;
     props.set_title("MyTest");
-    // polygon_test_renderer renderer;
     // demo_renderer renderer;
+    // polygon_test_renderer renderer;
     // concave_polygon_renderer renderer;
     // hole_polygon_renderer renderer;
     self_intersect_polygon_renderer renderer;
@@ -582,6 +593,6 @@ int WINAPI WinMain(
     app.set_renderer(&renderer);
     app.get_window().set_properties(props);
     app.init();
-    int rc = app.run();
+    int rc = app.run(3);
     return rc;
 }
