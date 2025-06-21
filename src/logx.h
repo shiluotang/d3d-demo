@@ -5,7 +5,6 @@
 #include <iomanip>
 #include <sstream>
 #include <ostream>
-#include <iostream>
 
 #if defined(_MSC_VER) && _MSC_VER > 1000
 #pragma once
