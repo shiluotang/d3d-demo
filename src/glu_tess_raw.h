@@ -65,11 +65,6 @@ class glu_tess_raw {
             glu_tess_raw *_M_tess;
         };
 
-        friend struct triangle_fan_collector;
-        friend struct triangle_strip_collector;
-        friend struct triangles_collector;
-        friend struct line_loop_collector;
-
         struct triangle_fan_collector : collector {
             explicit triangle_fan_collector(glu_tess_raw*);
 
@@ -150,6 +145,12 @@ class glu_tess_raw {
         triangles_type const& get_triangles() const;
 
         lines_type const& get_lines() const;
+
+        virtual
+        void handle_triangle_collected(tess_triangle const&);
+
+        virtual
+        void handle_line_collected(tess_line const&);
     protected:
         static
         void CALLBACK tess_begin_callback(GLenum type, void *data);

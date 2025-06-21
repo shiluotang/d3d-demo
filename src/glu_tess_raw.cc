@@ -179,8 +179,7 @@ void glu_tess_raw::triangle_fan_collector::collect(tess_point const &p) {
                 _M_triangle_points[0],
                 _M_triangle_points[1],
                 _M_triangle_points[2]);
-        LOGD("triangle = " << t);
-        _M_tess->_M_triangles.push_back(t);
+        _M_tess->handle_triangle_collected(t);
         tess_point tp = _M_triangle_points.back();
         _M_triangle_points.pop_back();
         _M_triangle_points.pop_back();
@@ -205,8 +204,7 @@ void glu_tess_raw::triangle_strip_collector::collect(tess_point const &p) {
                 _M_triangle_points[0],
                 _M_triangle_points[1],
                 _M_triangle_points[2]);
-        LOGD("triangle = " << t);
-        _M_tess->_M_triangles.push_back(t);
+        _M_tess->handle_triangle_collected(t);
         _M_triangle_points.pop_front();
     }
 }
@@ -227,8 +225,7 @@ void glu_tess_raw::triangles_collector::collect(tess_point const &p) {
                 _M_triangle_points[0],
                 _M_triangle_points[1],
                 _M_triangle_points[2]);
-        LOGD("triangle = " << t);
-        _M_tess->_M_triangles.push_back(t);
+        _M_tess->handle_triangle_collected(t);
         _M_triangle_points.clear();
     }
 }
@@ -245,8 +242,7 @@ void glu_tess_raw::line_loop_collector::end() {
     if (_M_line_points.size() == 1) {
         // connect to the first point
         tess_line line(_M_line_points[0], _M_p0);
-        LOGD("line = " << line);
-        _M_tess->_M_lines.push_back(line);
+        _M_tess->handle_line_collected(line);
     }
 }
 
@@ -259,9 +255,8 @@ void glu_tess_raw::line_loop_collector::collect(tess_point const &p) {
         _M_line_points.push_back(p);
     if (_M_line_points.size() == 2) {
         tess_line line(_M_line_points[0], _M_line_points[1]);
-        LOGD("line = " << line);
+        _M_tess->handle_line_collected(line);
         _M_line_points.pop_front();
-        _M_tess->_M_lines.push_back(line);
     }
 }
 
@@ -459,6 +454,16 @@ glu_tess_raw::get_triangles() const {
 glu_tess_raw::lines_type const&
 glu_tess_raw::get_lines() const {
     return _M_lines;
+}
+
+void glu_tess_raw::handle_triangle_collected(tess_triangle const &v) {
+    LOGD("triangle = " << v);
+    _M_triangles.push_back(v);
+}
+
+void glu_tess_raw::handle_line_collected(tess_line const &v) {
+    LOGD("line = " << v);
+    _M_lines.push_back(v);
 }
 
 std::ostream& operator<<(
