@@ -446,6 +446,14 @@ void glu_tess_raw::set_tolerance(double value) {
             value);
 }
 
+void glu_tess_raw::set_normal(GLdouble x, GLdouble y, GLdouble z) {
+    gluTessNormal(_M_tess, x, y, z);
+    LOGD("gluTessNormal(tess = " << _M_tess
+            << ", x = " << x
+            << ", y = " << y
+            << ", z = " << z);
+}
+
 glu_tess_raw::triangles_type const&
 glu_tess_raw::get_triangles() const {
     return _M_triangles;

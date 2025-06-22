@@ -140,6 +140,8 @@ class glu_tess_raw {
 
         void set_tolerance(double value);
 
+        void set_normal(GLdouble x, GLdouble y, GLdouble z);
+
         // FIXME may contains allocated data from combine callback, it's better
         // to deallocate them to prevent memory leak.
         triangles_type const& get_triangles() const;
