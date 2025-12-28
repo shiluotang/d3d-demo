@@ -154,18 +154,25 @@ d3d_context::d3d_context()
 }
 
 d3d_context::~d3d_context() {
+    ULONG rc = 0;
     // close and release the vertex buffer
-    if (_M_d3d_vertexbuffer)
-        _M_d3d_vertexbuffer->Release();
-    _M_d3d_vertexbuffer = NULL;
+    if (_M_d3d_vertexbuffer) {
+        rc = _M_d3d_vertexbuffer->Release();
+        LOGD("IDirect3DDeviceVertexBuffer9::Release() = " << rc);
+        _M_d3d_vertexbuffer = NULL;
+    }
     // close and release the 3D device
-    if (_M_d3d_dev)
-        _M_d3d_dev->Release();
-    _M_d3d_dev = NULL;
+    if (_M_d3d_dev) {
+        rc = _M_d3d_dev->Release();
+        LOGD("IDirect3DDevice9::Release() = " << rc);
+        _M_d3d_dev = NULL;
+    }
     // close and release Direct3D
-    if (_M_d3d)
-        _M_d3d->Release();
-    _M_d3d = NULL;
+    if (_M_d3d) {
+        rc = _M_d3d->Release();
+        LOGD("IDirect3D9::Release() = " << rc);
+        _M_d3d = NULL;
+    }
 }
 
 void d3d_context::init(window const &wnd) {
